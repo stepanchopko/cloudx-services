@@ -53,7 +53,7 @@ export async function handler() {
     return {
       statusCode: 200,
       body: JSON.stringify(productsWithStock),
-      headers: Headers,
+      headers: HEADERS,
     };
   } catch (error) {
     console.error("Error fetching products list:", error);
