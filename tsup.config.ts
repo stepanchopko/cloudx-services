@@ -4,6 +4,7 @@ export default defineConfig({
   entry: [
     "lib/product-service/getProductById.ts",
     "lib/product-service/getProductsList.ts",
+    "lib/product-service/createProduct.ts",
   ],
   target: "node20",
   splitting: false,

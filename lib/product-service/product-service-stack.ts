@@ -52,6 +52,18 @@ export class ProductServiceStack extends cdk.Stack {
       },
     });
 
+    const createProduct = new lambda.Function(this, "create-product", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: "createProduct.handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+      environment: {
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
+        STOCK_TABLE_NAME: stockTable.tableName,
+      },
+    });
+
     // Dynamically seed mock data into 'products' table
     products.forEach((product, index) => {
       new cdk.custom_resources.AwsCustomResource(this, `SeedProduct${index}`, {
@@ -118,13 +130,21 @@ export class ProductServiceStack extends cdk.Stack {
     const productResource = api.root.addResource("products");
     productResource.addMethod("GET", productListLambdaIntegration);
 
-    const helloUserResource = productResource.addResource("{product_id}");
-    helloUserResource.addMethod("GET", productByIdLambdaIntegration);
+    const productByIdResource = productResource.addResource("{product_id}");
+    productByIdResource.addMethod("GET", productByIdLambdaIntegration);
+
+    productResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(createProduct)
+    );
 
     productsTable.grantReadData(getProductsList);
     stockTable.grantReadData(getProductsList);
 
     productsTable.grantReadData(getProductById);
     stockTable.grantReadData(getProductById);
+
+    productsTable.grantWriteData(createProduct);
+    stockTable.grantWriteData(createProduct);
   }
 }
