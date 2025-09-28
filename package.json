@@ -8,7 +8,7 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "build": "rm -rf dist && tsup",
+    "build": "tsc && rm -rf dist && tsup",
     "deploy": "npm run build && cdk deploy"
   },
   "devDependencies": {
