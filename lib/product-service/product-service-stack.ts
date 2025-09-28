@@ -12,22 +12,6 @@ export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const getProductsList = new lambda.Function(this, "get-products-list", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
-      handler: "getProductsList.handler",
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
-    });
-
-    const getProductById = new lambda.Function(this, "get-product-by-id", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
-      handler: "getProductById.handler",
-      code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
-    });
-
     const productsTable = new dynamodb.Table(this, "Products", {
       tableName: "Products",
       partitionKey: {
@@ -41,6 +25,30 @@ export class ProductServiceStack extends cdk.Stack {
       partitionKey: {
         name: "product_id",
         type: dynamodb.AttributeType.STRING,
+      },
+    });
+
+    const getProductsList = new lambda.Function(this, "get-products-list", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: "getProductsList.handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+      environment: {
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
+        STOCK_TABLE_NAME: stockTable.tableName,
+      },
+    });
+
+    const getProductById = new lambda.Function(this, "get-product-by-id", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      memorySize: 1024,
+      timeout: cdk.Duration.seconds(5),
+      handler: "getProductById.handler",
+      code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+      environment: {
+        PRODUCTS_TABLE_NAME: productsTable.tableName,
+        STOCK_TABLE_NAME: stockTable.tableName,
       },
     });
 
@@ -112,5 +120,11 @@ export class ProductServiceStack extends cdk.Stack {
 
     const helloUserResource = productResource.addResource("{product_id}");
     helloUserResource.addMethod("GET", productByIdLambdaIntegration);
+
+    productsTable.grantReadData(getProductsList);
+    stockTable.grantReadData(getProductsList);
+
+    productsTable.grantReadData(getProductById);
+    stockTable.grantReadData(getProductById);
   }
 }
