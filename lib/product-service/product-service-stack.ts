@@ -2,7 +2,11 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
+
+import { products } from "./mock-data/products.js";
+import { stock } from "./mock-data/stock.js";
 
 export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -22,6 +26,70 @@ export class ProductServiceStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       handler: "getProductById.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+    });
+
+    const productsTable = new dynamodb.Table(this, "Products", {
+      tableName: "Products",
+      partitionKey: {
+        name: "id",
+        type: dynamodb.AttributeType.STRING,
+      },
+    });
+
+    const stockTable = new dynamodb.Table(this, "Stock", {
+      tableName: "Stock",
+      partitionKey: {
+        name: "product_id",
+        type: dynamodb.AttributeType.STRING,
+      },
+    });
+
+    // Dynamically seed mock data into 'products' table
+    products.forEach((product, index) => {
+      new cdk.custom_resources.AwsCustomResource(this, `SeedProduct${index}`, {
+        onCreate: {
+          service: "DynamoDB",
+          action: "putItem",
+          parameters: {
+            TableName: productsTable.tableName,
+            Item: {
+              id: { S: product.id },
+              title: { S: product.title },
+              description: { S: product.description },
+              price: { N: product.price.toString() },
+            },
+          },
+          physicalResourceId: cdk.custom_resources.PhysicalResourceId.of(
+            `Product-${product.id}`
+          ),
+        },
+        policy: cdk.custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: [productsTable.tableArn],
+        }),
+      });
+    });
+
+    // Dynamically seed mock data into 'stock' table
+    stock.forEach((stockItem, index) => {
+      new cdk.custom_resources.AwsCustomResource(this, `SeedStock${index}`, {
+        onCreate: {
+          service: "DynamoDB",
+          action: "putItem",
+          parameters: {
+            TableName: stockTable.tableName,
+            Item: {
+              product_id: { S: stockItem.product_id },
+              count: { N: stockItem.count.toString() },
+            },
+          },
+          physicalResourceId: cdk.custom_resources.PhysicalResourceId.of(
+            `Stock-${stockItem.product_id}`
+          ),
+        },
+        policy: cdk.custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: [stockTable.tableArn],
+        }),
+      });
     });
 
     const api = new apigateway.RestApi(this, "product-service-api", {

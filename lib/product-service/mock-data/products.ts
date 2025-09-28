@@ -7,39 +7,27 @@ type Product = {
 
 export const products: Product[] = [
   {
-    description: "Short Product Description1",
+    description: "Short Product Description 1",
     id: "1",
     price: 24,
-    title: "ProductOne",
+    title: "Product Title 1",
   },
   {
-    description: "Short Product Description7",
+    description: "Short Product Description 2",
     id: "2",
     price: 15,
-    title: "ProductTitle",
+    title: "Product Title 2",
   },
   {
-    description: "Short Product Description2",
+    description: "Short Product Description 3",
     id: "3",
     price: 23,
-    title: "Product",
+    title: "Product Title 3",
   },
   {
-    description: "Short Product Description4",
-    id: "7567ec4b-b10c-48c5-9345-fc73348a80a1",
-    price: 15,
-    title: "ProductTest",
-  },
-  {
-    description: "Short Product Descriptio1",
+    description: "Short Product Description 4",
     id: "4",
-    price: 23,
-    title: "Product2",
-  },
-  {
-    description: "Short Product Description7",
-    id: "5",
     price: 15,
-    title: "ProductName",
+    title: "Product Title 4",
   },
 ];
