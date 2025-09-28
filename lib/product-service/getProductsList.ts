@@ -3,6 +3,7 @@ import {
   ScanCommand,
   GetItemCommand,
 } from "@aws-sdk/client-dynamodb";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
 import type { Product } from "./mock-data/products.js";
 import type { Stock } from "./mock-data/stock.js";
@@ -13,7 +14,11 @@ const STOCK_TABLE_NAME = process.env.STOCK_TABLE_NAME;
 
 const dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 
-export async function handler() {
+export async function handler(
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> {
+  console.log("Incoming request:", event);
+
   try {
     const productsCommand = new ScanCommand({ TableName: PRODUCTS_TABLE_NAME });
     const productsResult = await dynamoDBClient.send(productsCommand);

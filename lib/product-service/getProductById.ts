@@ -11,6 +11,8 @@ const dynamoDBClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 export async function handler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
+  console.log("Incoming request:", event);
+
   const productId = event.pathParameters?.product_id;
 
   if (!productId) {
