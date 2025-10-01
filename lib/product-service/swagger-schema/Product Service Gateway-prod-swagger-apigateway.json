@@ -1,39 +1,50 @@
 {
-  "swagger" : "2.0",
-  "info" : {
-    "description" : "This API serves the Lambda functions",
-    "version" : "2025-09-22T19:05:36Z",
-    "title" : "Product Service Gateway"
+  "swagger": "2.0",
+  "info": {
+    "description": "This API serves the Lambda functions",
+    "version": "2025-09-28T18:42:40Z",
+    "title": "Product Service Gateway"
   },
-  "host" : "o0swc1obbk.execute-api.us-east-1.amazonaws.com",
-  "basePath" : "/prod",
-  "schemes" : [ "https" ],
-  "paths" : {
-    "/products" : {
-      "get" : {
-        "responses" : { },
-        "x-amazon-apigateway-integration" : {
-          "type" : "aws_proxy",
-          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductslist4B679C06-oxrLSwBoCyq0/invocations",
-          "httpMethod" : "POST",
-          "passthroughBehavior" : "when_no_match"
+  "host": "o0swc1obbk.execute-api.us-east-1.amazonaws.com",
+  "basePath": "/prod",
+  "schemes": ["https"],
+  "paths": {
+    "/products": {
+      "get": {
+        "responses": {},
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductslist4B679C06-oxrLSwBoCyq0/invocations",
+          "httpMethod": "POST",
+          "passthroughBehavior": "when_no_match",
+          "type": "aws_proxy"
+        }
+      },
+      "post": {
+        "responses": {},
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-createproductB5709663-lgDDEyetTIWl/invocations",
+          "httpMethod": "POST",
+          "passthroughBehavior": "when_no_match",
+          "type": "aws_proxy"
         }
       }
     },
-    "/products/{product_id}" : {
-      "get" : {
-        "parameters" : [ {
-          "name" : "product_id",
-          "in" : "path",
-          "required" : true,
-          "type" : "string"
-        } ],
-        "responses" : { },
-        "x-amazon-apigateway-integration" : {
-          "type" : "aws_proxy",
-          "uri" : "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductbyid1ADA211E-f3oBGtfU8VfW/invocations",
-          "httpMethod" : "POST",
-          "passthroughBehavior" : "when_no_match"
+    "/products/{product_id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {},
+        "x-amazon-apigateway-integration": {
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductbyid1ADA211E-f3oBGtfU8VfW/invocations",
+          "httpMethod": "POST",
+          "passthroughBehavior": "when_no_match",
+          "type": "aws_proxy"
         }
       }
     }
