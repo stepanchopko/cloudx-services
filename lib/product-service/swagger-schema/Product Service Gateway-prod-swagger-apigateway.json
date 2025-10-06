@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This API serves the Lambda functions",
-    "version": "2025-09-28T18:42:40Z",
+    "version": "2025-09-28T20:14:49Z",
     "title": "Product Service Gateway"
   },
   "host": "o0swc1obbk.execute-api.us-east-1.amazonaws.com",
@@ -13,19 +13,19 @@
       "get": {
         "responses": {},
         "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
           "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductslist4B679C06-oxrLSwBoCyq0/invocations",
           "httpMethod": "POST",
-          "passthroughBehavior": "when_no_match",
-          "type": "aws_proxy"
+          "passthroughBehavior": "when_no_match"
         }
       },
       "post": {
         "responses": {},
         "x-amazon-apigateway-integration": {
-          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-createproductB5709663-lgDDEyetTIWl/invocations",
+          "type": "aws_proxy",
+          "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-createproductB5709663-piIIyLEJSbLs/invocations",
           "httpMethod": "POST",
-          "passthroughBehavior": "when_no_match",
-          "type": "aws_proxy"
+          "passthroughBehavior": "when_no_match"
         }
       }
     },
@@ -41,10 +41,10 @@
         ],
         "responses": {},
         "x-amazon-apigateway-integration": {
+          "type": "aws_proxy",
           "uri": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:463470939764:function:ProductServiceStack-getproductbyid1ADA211E-f3oBGtfU8VfW/invocations",
           "httpMethod": "POST",
-          "passthroughBehavior": "when_no_match",
-          "type": "aws_proxy"
+          "passthroughBehavior": "when_no_match"
         }
       }
     }
