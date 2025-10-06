@@ -1,4 +1,9 @@
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  CopyObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { Readable } from "stream";
 import csvParser from "csv-parser";
 import { S3Event, APIGatewayProxyResult } from "aws-lambda";
@@ -6,6 +11,32 @@ import { S3Event, APIGatewayProxyResult } from "aws-lambda";
 import { HEADERS } from "./constants";
 
 const s3 = new S3Client({ region: process.env.AWS_REGION });
+
+async function moveFile(
+  bucketName: string,
+  sourceKey: string,
+  destinationKey: string
+): Promise<void> {
+  try {
+    const copyCommand = new CopyObjectCommand({
+      Bucket: bucketName,
+      CopySource: `${bucketName}/${sourceKey}`,
+      Key: destinationKey,
+    });
+
+    await s3.send(copyCommand);
+
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: sourceKey,
+    });
+
+    await s3.send(deleteCommand);
+  } catch (error) {
+    console.error("Error moving file:", error);
+    throw error;
+  }
+}
 
 export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
   console.log("Incoming Request:", event);
@@ -43,15 +74,18 @@ export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
             reject(error);
           });
       });
+
+      const destinationKey = objectKey.replace("uploaded/", "parsed/");
+
+      await moveFile(bucketName, objectKey, destinationKey);
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "File parsed successfully" }),
+      body: JSON.stringify({ message: "File parsed and moved successfully" }),
       headers: HEADERS,
     };
   } catch (error: any) {
-    console.error("Error parsing file:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Failed to parse file" }),

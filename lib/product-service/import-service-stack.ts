@@ -23,12 +23,19 @@ export class ImportServiceStack extends cdk.Stack {
           prefix: "uploaded/",
           expiration: cdk.Duration.days(7),
         },
+        {
+          id: "delete-old-parsed-files",
+          enabled: true,
+          prefix: "parsed/",
+          expiration: cdk.Duration.days(30),
+        },
       ],
     });
 
-    new s3deploy.BucketDeployment(this, "deploy-upload-folder", {
+    new s3deploy.BucketDeployment(this, "deploy-folders", {
       sources: [
         s3deploy.Source.jsonData("uploaded/.keep", { placeholder: true }),
+        s3deploy.Source.jsonData("parsed/.keep", { placeholder: true }),
       ],
       destinationBucket: importBucket,
       retainOnDelete: false,
@@ -82,14 +89,34 @@ export class ImportServiceStack extends cdk.Stack {
     const importFileParser = new lambda.Function(this, "import-file-parser", {
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 1024,
-      timeout: cdk.Duration.seconds(5),
+      timeout: cdk.Duration.seconds(30),
       handler: "importFileParser.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+      environment: {
+        IMPORT_BUCKET_NAME: importBucket.bucketName,
+      },
     });
 
+    importBucket.grantReadWrite(importFileParser);
+    importBucket.grantDelete(importFileParser);
     importBucket.grantPut(importFileParser);
     importBucket.grantPutAcl(importFileParser);
     importBucket.grantRead(importFileParser);
+
+    importFileParser.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:DeleteObject",
+          "s3:CopyObject",
+          "s3:GetObjectAcl",
+        ],
+        resources: [`${importBucket.bucketArn}/*`],
+      })
+    );
 
     importBucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
