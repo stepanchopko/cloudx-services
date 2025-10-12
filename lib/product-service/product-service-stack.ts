@@ -11,6 +11,8 @@ import { products } from "./mock-data/products.js";
 import { stock } from "./mock-data/stock.js";
 
 export class ProductServiceStack extends cdk.Stack {
+  public readonly catalogItemsQueue: sqs.Queue;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -82,17 +84,17 @@ export class ProductServiceStack extends cdk.Stack {
       }
     );
 
-    const catalogItemsQueue = new sqs.Queue(this, "catalog-items-queue", {
+    this.catalogItemsQueue = new sqs.Queue(this, "catalog-items-queue", {
       queueName: "catalogItemsQueue",
     });
 
     catalogBatchProcess.addEventSource(
-      new SqsEventSource(catalogItemsQueue, {
+      new SqsEventSource(this.catalogItemsQueue, {
         batchSize: 5,
       })
     );
 
-    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+    this.catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
 
     // Dynamically seed mock data into 'products' table
     products.forEach((product, index) => {

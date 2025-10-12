@@ -5,5 +5,10 @@ import { ImportServiceStack } from "../lib/product-service/import-service-stack.
 
 const app = new cdk.App();
 
-new ProductServiceStack(app, "ProductServiceStack");
-new ImportServiceStack(app, "ImportServiceStack");
+const productsStack = new ProductServiceStack(app, "ProductServiceStack");
+const importStack = new ImportServiceStack(app, "ImportServiceStack", {
+  // @ts-ignore
+  catalogItemsQueue: productsStack.catalogItemsQueue,
+});
+
+importStack.addDependency(productsStack);
