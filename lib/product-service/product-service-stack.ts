@@ -4,11 +4,15 @@ import * as path from "path";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import { Construct } from "constructs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 import { products } from "./mock-data/products.js";
 import { stock } from "./mock-data/stock.js";
+
+const NOTIFY_EMAIL = "stepan.chopko08@gmail.com";
 
 export class ProductServiceStack extends cdk.Stack {
   public readonly catalogItemsQueue: sqs.Queue;
@@ -68,6 +72,14 @@ export class ProductServiceStack extends cdk.Stack {
       },
     });
 
+    const createProductTopic = new sns.Topic(this, "create-product-topic", {
+      topicName: "createProductTopic",
+    });
+
+    createProductTopic.addSubscription(
+      new subscriptions.EmailSubscription(NOTIFY_EMAIL)
+    );
+
     const catalogBatchProcess = new lambda.Function(
       this,
       "catalog-batch-process",
@@ -80,6 +92,7 @@ export class ProductServiceStack extends cdk.Stack {
         environment: {
           PRODUCTS_TABLE_NAME: productsTable.tableName,
           STOCK_TABLE_NAME: stockTable.tableName,
+          CREATE_PRODUCT_TOPIC_ARN: createProductTopic.topicArn,
         },
       }
     );
@@ -95,6 +108,7 @@ export class ProductServiceStack extends cdk.Stack {
     );
 
     this.catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+    createProductTopic.grantPublish(catalogBatchProcess);
 
     // Dynamically seed mock data into 'products' table
     products.forEach((product, index) => {
