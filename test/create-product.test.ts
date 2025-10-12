@@ -60,7 +60,7 @@ describe("createProductHandler", () => {
     });
   });
 
-  it("should return 500 when DynamoDB transaction fails", async () => {
+  it("should return 500", async () => {
     dynamoMock.rejects(new Error("DynamoDB error"));
 
     const event = {
