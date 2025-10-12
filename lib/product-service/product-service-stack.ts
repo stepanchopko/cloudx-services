@@ -3,7 +3,9 @@ import * as cdk from "aws-cdk-lib";
 import * as path from "path";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import { Construct } from "constructs";
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 import { products } from "./mock-data/products.js";
 import { stock } from "./mock-data/stock.js";
@@ -63,6 +65,34 @@ export class ProductServiceStack extends cdk.Stack {
         STOCK_TABLE_NAME: stockTable.tableName,
       },
     });
+
+    const catalogBatchProcess = new lambda.Function(
+      this,
+      "catalog-batch-process",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 1024,
+        timeout: cdk.Duration.seconds(5),
+        handler: "catalogBatchProcess.handler",
+        code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
+        environment: {
+          PRODUCTS_TABLE_NAME: productsTable.tableName,
+          STOCK_TABLE_NAME: stockTable.tableName,
+        },
+      }
+    );
+
+    const catalogItemsQueue = new sqs.Queue(this, "catalog-items-queue", {
+      queueName: "catalogItemsQueue",
+    });
+
+    catalogBatchProcess.addEventSource(
+      new SqsEventSource(catalogItemsQueue, {
+        batchSize: 5,
+      })
+    );
+
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
 
     // Dynamically seed mock data into 'products' table
     products.forEach((product, index) => {
@@ -146,5 +176,8 @@ export class ProductServiceStack extends cdk.Stack {
 
     productsTable.grantWriteData(createProduct);
     stockTable.grantWriteData(createProduct);
+
+    productsTable.grantWriteData(catalogBatchProcess);
+    stockTable.grantWriteData(catalogBatchProcess);
   }
 }
