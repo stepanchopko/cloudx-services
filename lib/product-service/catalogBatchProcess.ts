@@ -72,6 +72,12 @@ export const handler = async (event: SQSEvent) => {
           count: item.count,
         }),
         Subject: "New product created",
+        MessageAttributes: {
+          price: {
+            DataType: "Number",
+            StringValue: item.price.toString(),
+          },
+        },
       });
 
       await snsClient.send(publishCommand);

@@ -13,6 +13,7 @@ import { products } from "./mock-data/products.js";
 import { stock } from "./mock-data/stock.js";
 
 const NOTIFY_EMAIL = "stepan.chopko08@gmail.com";
+const NOTIFY_EMAIL_2 = "stepanchopko49@gmail.com";
 
 export class ProductServiceStack extends cdk.Stack {
   public readonly catalogItemsQueue: sqs.Queue;
@@ -78,6 +79,17 @@ export class ProductServiceStack extends cdk.Stack {
 
     createProductTopic.addSubscription(
       new subscriptions.EmailSubscription(NOTIFY_EMAIL)
+    );
+
+    // if price grater than 1000 send to another email
+    createProductTopic.addSubscription(
+      new subscriptions.EmailSubscription(NOTIFY_EMAIL_2, {
+        filterPolicy: {
+          price: sns.SubscriptionFilter.numericFilter({
+            greaterThan: 1000,
+          }),
+        },
+      })
     );
 
     const catalogBatchProcess = new lambda.Function(
