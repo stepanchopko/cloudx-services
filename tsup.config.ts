@@ -7,6 +7,7 @@ export default defineConfig({
     "lib/product-service/createProduct.ts",
     "lib/product-service/importProductsFile.ts",
     "lib/product-service/importFileParser.ts",
+    "lib/product-service/catalogBatchProcess.ts",
   ],
   target: "node20",
   splitting: false,

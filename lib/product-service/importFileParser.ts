@@ -4,13 +4,17 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { Readable } from "stream";
 import csvParser from "csv-parser";
 import { S3Event, APIGatewayProxyResult } from "aws-lambda";
 
 import { HEADERS } from "./constants";
 
+const QUEUE_URL = process.env.SQS_QUEUE_URL;
+
 const s3 = new S3Client({ region: process.env.AWS_REGION });
+const sqs = new SQSClient({ region: process.env.AWS_REGION });
 
 async function moveFile(
   bucketName: string,
@@ -38,9 +42,21 @@ async function moveFile(
   }
 }
 
-export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
-  console.log("Incoming Request:", event);
+async function sendToSQS(data: any): Promise<void> {
+  try {
+    const command = new SendMessageCommand({
+      QueueUrl: QUEUE_URL,
+      MessageBody: JSON.stringify(data),
+    });
 
+    await sqs.send(command);
+  } catch (error) {
+    console.error("Error sending to SQS:", error);
+    throw error;
+  }
+}
+
+export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
   try {
     for (const record of event.Records) {
       const bucketName = record.s3.bucket.name;
@@ -61,12 +77,12 @@ export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
 
         stream
           .pipe(csvParser())
-          .on("data", (data) => {
+          .on("data", async (data) => {
             count++;
-            console.log(`Record #${count}:`, data);
+
+            await sendToSQS(data);
           })
           .on("end", () => {
-            console.log(`Total records: ${count}`);
             resolve(undefined);
           })
           .on("error", (error) => {
@@ -76,13 +92,14 @@ export async function handler(event: S3Event): Promise<APIGatewayProxyResult> {
       });
 
       const destinationKey = objectKey.replace("uploaded/", "parsed/");
-
       await moveFile(bucketName, objectKey, destinationKey);
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "File parsed and moved successfully" }),
+      body: JSON.stringify({
+        message: "File parsed and sent to SQS successfully",
+      }),
       headers: HEADERS,
     };
   } catch (error: any) {

@@ -8,9 +8,19 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import { Construct } from "constructs";
 
+interface ImportServiceStackProps extends cdk.StackProps {
+  catalogItemsQueue: {
+    queueUrl: string;
+    queueArn: string;
+  };
+}
+
 export class ImportServiceStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: ImportServiceStackProps) {
     super(scope, id, props);
+
+    const queueUrl = props.catalogItemsQueue.queueUrl;
+    const queueArn = props.catalogItemsQueue.queueArn;
 
     const importBucket = new s3.Bucket(this, "import-bucket", {
       versioned: true,
@@ -94,8 +104,17 @@ export class ImportServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
       environment: {
         IMPORT_BUCKET_NAME: importBucket.bucketName,
+        SQS_QUEUE_URL: queueUrl,
       },
     });
+
+    importFileParser.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["sqs:SendMessage"],
+        resources: [queueArn],
+      })
+    );
 
     importBucket.grantReadWrite(importFileParser);
     importBucket.grantDelete(importFileParser);
