@@ -26,6 +26,19 @@ export class ImportServiceStack extends cdk.Stack {
       versioned: true,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+      cors: [
+        {
+          allowedMethods: [
+            s3.HttpMethods.GET,
+            s3.HttpMethods.PUT,
+            s3.HttpMethods.POST,
+            s3.HttpMethods.DELETE,
+            s3.HttpMethods.HEAD,
+          ],
+          allowedOrigins: ["*"],
+          allowedHeaders: ["*"],
+        },
+      ],
       lifecycleRules: [
         {
           id: "delete-old-files",
@@ -68,6 +81,7 @@ export class ImportServiceStack extends cdk.Stack {
 
     importBucket.grantPut(importProductsFile);
     importBucket.grantPutAcl(importProductsFile);
+    importBucket.grantRead(importProductsFile);
 
     importProductsFile.addToRolePolicy(
       new iam.PolicyStatement({
@@ -87,13 +101,54 @@ export class ImportServiceStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, "import-service-api", {
       restApiName: "Import Service Gateway",
       description: "This API serves the import products file lambda",
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: ["*"],
+      },
     });
+
+    const basicAuthorizerArn = cdk.Fn.importValue("BasicAuthorizerLambdaArn");
+
+    const basicAuthorizerFunction = lambda.Function.fromFunctionAttributes(
+      this,
+      "BasicAuthorizerFunction",
+      {
+        functionArn: basicAuthorizerArn,
+        sameEnvironment: true,
+      }
+    );
+
+    const lambdaAuthorizer = new apigateway.TokenAuthorizer(
+      this,
+      "BasicTokenAuthorizer",
+      {
+        handler: basicAuthorizerFunction,
+        identitySource: "method.request.header.Authorization",
+        resultsCacheTtl: cdk.Duration.seconds(0),
+      }
+    );
+
+    basicAuthorizerFunction.grantInvoke(
+      new iam.ServicePrincipal("apigateway.amazonaws.com")
+    );
 
     const importProductsResource = api.root.addResource("import");
 
     importProductsResource.addMethod(
       "GET",
-      new apigateway.LambdaIntegration(importProductsFile)
+      new apigateway.LambdaIntegration(importProductsFile, {
+        requestTemplates: {
+          "application/json": '{ "statusCode": "200" }',
+        },
+      }),
+      {
+        authorizer: lambdaAuthorizer,
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
+        requestParameters: {
+          "method.request.querystring.name": true,
+        },
+      }
     );
 
     const importFileParser = new lambda.Function(this, "import-file-parser", {
