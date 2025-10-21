@@ -12,6 +12,10 @@ export class AuthorizerServiceStack extends cdk.Stack {
 
     const envConfig = dotenv.config();
 
+    const envVars = envConfig.parsed || {
+      defaultuser: "TEST_PASSWORD",
+    };
+
     this.basicAuthorizer = new lambda.Function(this, "BasicAuthorizer", {
       functionName: "basicAuthorizer",
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -19,9 +23,7 @@ export class AuthorizerServiceStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       handler: "basicAuthorizer.handler",
       code: lambda.Code.fromAsset(path.join(__dirname, "../../dist")),
-      environment: {
-        ...(envConfig.parsed || {}),
-      },
+      environment: envVars,
     });
 
     new cdk.CfnOutput(this, "BasicAuthorizerLambdaArn", {
