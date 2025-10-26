@@ -8,11 +8,12 @@ export default defineConfig({
     "lib/product-service/importProductsFile.ts",
     "lib/product-service/importFileParser.ts",
     "lib/product-service/catalogBatchProcess.ts",
+    "lib/product-service/basicAuthorizer.ts",
   ],
   target: "node20",
   splitting: false,
   sourcemap: false,
   clean: true,
   external: ["aws-sdk", "@aws-sdk/client-dynamodb"],
-  noExternal: ["csv-parser"],
+  noExternal: ["csv-parser", "dotenv"],
 });
